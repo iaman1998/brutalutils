@@ -1,5 +1,8 @@
 name: IBM Cloud Auto Install
 
+
+
+
 on:
   workflow_dispatch:
     inputs:
@@ -54,10 +57,10 @@ jobs:
         sudo mv cf /usr/local/bin
       
     - name: Login Cloud Foundry
-      run: cf l -a https://api.us-south.cf.cloud.ibm.com login -u ${{ secrets.IBM_MAIL }} -p ${{ secrets.IBM_PWD }}
+      run: cf l -a https://api.eu-gb.cf.cloud.ibm.com login -u ${{ secrets.IBM_MAIL }} -p ${{ secrets.IBM_PWD }}
       
     - name: Push Cloud Foundry APP
       run: |
         cf push ${{ secrets.IBM_APP_NAME }}
-        curl ${{ secrets.IBM_APP_NAME }}.us-south.cf.appdomain.cloud/api/gdurl/count?fid=124pjM5LggSuwI1n40bcD5tQ13wS0M6wg
-        curl -F "url=https://${{ secrets.IBM_APP_NAME }}.us-south.cf.appdomain.cloud/api/gdurl/tgbot" 'https://api.telegram.org/bot${{ secrets.TG_TOKEN }}/setWebhook'
+        curl ${{ secrets.IBM_APP_NAME }}.eu-gb.cf.appdomain.cloud/api/gdurl/count?fid=124pjM5LggSuwI1n40bcD5tQ13wS0M6wg
+        curl -F "url=https://${{ secrets.IBM_APP_NAME }}.eu-gb.cf.appdomain.cloud/api/gdurl/tgbot" 'https://api.telegram.org/bot${{ secrets.TG_TOKEN }}/setWebhook'
