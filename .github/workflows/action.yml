@@ -1,0 +1,69 @@
+name: GDUtils Bot
+
+on:
+  schedule:
+    - cron: 0 */6 * * *
+  workflow_dispatch:
+    inputs:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install build dependencies
+      run: |
+        sudo apt-get -y update
+        sudo apt-get -y install wget
+        sudo apt-get -y install curl
+        sudo apt-get -y install zip unzip
+        sudo apt-get install nodejs
+        sudo npm i -g pm2
+
+    - name: Download Accounts File
+      run: |
+        git submodule update --init --recursive
+        cd gd-utils/sa
+        curl -L "${{ secrets.SA_DLURL }}" -o accounts.zip
+        unzip -jq -o accounts.zip
+
+    - name: Settings Configuration File
+      run: |
+        cd
+        sed -i "s/bot_token/${{ secrets.TG_TOKEN }}/g" ${GITHUB_WORKSPACE}/gd-utils/config.js
+        sed -i "s/your_tg_username/${{ secrets.TG_USERNAME }}/g" ${GITHUB_WORKSPACE}/gd-utils/config.js
+        sed -i "s/DEFAULT_TARGET = ''/DEFAULT_TARGET = '${{ secrets.DRIVE_ID }}'/g" ${GITHUB_WORKSPACE}/gd-utils/config.js
+        sed -i "s/23333/8080/g" ${GITHUB_WORKSPACE}/gd-utils/server.js
+        sed -i "s@https_proxy='http://127.0.0.1:1086' nodemon@pm2-runtime start@g" ${GITHUB_WORKSPACE}/gd-utils/package.json
+        sed -i '/scripts/a\    "preinstall": "npm install pm2 -g",' ${GITHUB_WORKSPACE}/gd-utils/package.json
+        sed -i '/repository/a\  "engines": {\n    "node": "12.*"\n  },' ${GITHUB_WORKSPACE}/gd-utils/package.json
+        sed -i '/dependencies/a\    "pm2": "^3.2.8",' ${GITHUB_WORKSPACE}/gd-utils/package.json
+
+    - name: Install GD-utils Dependencies
+      run: |
+        mkdir ~/.npm-global
+        sudo npm config set prefix '~/.npm-global'
+        sed -i '$a\export PATH=~/.npm-global/bin:$PATH' ~/.profile
+        source ~/.profile
+        cd ${GITHUB_WORKSPACE}/gd-utils
+        sudo npm i
+        cd ..
+      
+    - name: Run the Bot
+      run: |
+        cd ${GITHUB_WORKSPACE}/gd-utils
+        sudo npm install --unsafe-perm=true --allow-root
+        sudo pm2-runtime start server.js & sudo npx localtunnel --port 8080 --subdomain ${{ secrets.SUBDOMAIN }}
+
+  webrequest:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: webrequests
+      run: |
+        sleep 3m
+        curl "https://${{ secrets.SUBDOMAIN }}.loca.lt/api/gdurl/count?fid=124pjM5LggSuwI1n40bcD5tQ13wS0M6wg"
+        curl -F "url=https://${{ secrets.SUBDOMAIN }}.loca.lt/api/gdurl/tgbot" 'https://api.telegram.org/bot${{ secrets.TG_TOKEN }}/setWebhook'
+
